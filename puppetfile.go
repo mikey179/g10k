@@ -57,7 +57,7 @@ func resolvePuppetEnvironment(envBranch string) {
 							Debugf("Resolving branch: " + branch)
 							// TODO if sa.Prefix != true
 							targetDir := sa.Basedir + source + "_" + strings.Replace(branch, "/", "_", -1) + "/"
-							syncToModuleDir(workDir, targetDir, branch)
+							syncToModuleDir(workDir, targetDir, branch, false)
 							if _, err := os.Stat(targetDir + "Puppetfile"); os.IsNotExist(err) {
 								Debugf("Skipping branch " + source + "_" + branch + " because " + targetDir + "Puppetfile does not exitst")
 							} else {
@@ -94,7 +94,7 @@ func resolvePuppetEnvironment(envBranch string) {
 
 func resolvePuppetfile(allPuppetfiles map[string]Puppetfile) {
 	var wg sync.WaitGroup
-	uniqueGitModules := make(map[string]string)
+	uniqueGitModules := make(map[string]GitModule)
 	uniqueForgeModules = make(map[string]struct{})
 	latestForgeModules = make(map[string]string)
 	exisitingModuleDirs := make(map[string]struct{})
@@ -102,9 +102,10 @@ func resolvePuppetfile(allPuppetfiles map[string]Puppetfile) {
 		Debugf("Resolving " + env)
 		//fmt.Println(pf)
 		for _, gitModule := range pf.gitModules {
+			gitModule.privateKey = pf.privateKey
 			mutex.Lock()
 			if _, ok := uniqueGitModules[gitModule.git]; !ok {
-				uniqueGitModules[gitModule.git] = pf.privateKey
+				uniqueGitModules[gitModule.git] = gitModule
 			}
 			mutex.Unlock()
 		}
@@ -162,7 +163,7 @@ func resolvePuppetfile(allPuppetfiles map[string]Puppetfile) {
 					tree = gitModule.tag
 				} else if len(gitModule.ref) > 0 {
 					tree = gitModule.ref
-				} else if strings.EqualFold(gitModule.link, "true") {
+				} else if gitModule.link {
 					if pfMode {
 						if len(os.Getenv("g10k_branch")) > 0 {
 							tree = os.Getenv("g10k_branch")
@@ -174,7 +175,7 @@ func resolvePuppetfile(allPuppetfiles map[string]Puppetfile) {
 						tree = envBranch
 					}
 				}
-				syncToModuleDir(config.ModulesCacheDir+strings.Replace(strings.Replace(gitModule.git, "/", "_", -1), ":", "-", -1), targetDir, tree)
+				syncToModuleDir(config.ModulesCacheDir+strings.Replace(strings.Replace(gitModule.git, "/", "_", -1), ":", "-", -1), targetDir, tree, gitModule.ignoreUnreachable)
 
 				// remove this module from the exisitingModuleDirs map
 				mutex.Lock()

@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -84,7 +85,7 @@ func readPuppetfile(pf string, sshKey string) Puppetfile {
 	reModuledir := regexp.MustCompile("^\\s*(?:moduledir)\\s*['\"]?([^'\"]+)['\"]")
 	reForgeModule := regexp.MustCompile("^\\s*(?:mod)\\s*['\"]?([^'\"]+/[^'\"]+)['\"](?:\\s*(,)\\s*['\"]?([^'\"]*))?")
 	reGitModule := regexp.MustCompile("^\\s*(?:mod)\\s*['\"]?([^'\"/]+)['\"]\\s*,(.*)")
-	reGitAttribute := regexp.MustCompile("\\s*:(git|commit|tag|branch|ref|link)\\s*=>\\s*['\"]?([^'\"]+)['\"]")
+	reGitAttribute := regexp.MustCompile("\\s*:(git|commit|tag|branch|ref|link|ignore-unreachable)\\s*=>\\s*['\"]?([^'\"]+)['\"]")
 	//moduleName := ""
 	//nextLineAttr := false
 
@@ -154,7 +155,17 @@ func readPuppetfile(pf string, sshKey string) Puppetfile {
 					} else if a[1] == "ref" {
 						gm.ref = a[2]
 					} else if a[1] == "link" {
-						gm.link = a[2]
+						gm.link, err = strconv.ParseBool(a[2])
+						if err != nil {
+							log.Fatal("Error: Can not convert value ", a[2], " of parameter ", a[1], " to boolean. In ", pf, " for module ", m[1], " line: ", line)
+							os.Exit(1)
+						}
+					} else if a[1] == "ignore-unreachable" {
+						gm.ignoreUnreachable, err = strconv.ParseBool(a[2])
+						if err != nil {
+							log.Fatal("Error: Can not convert value ", a[2], " of parameter ", a[1], " to boolean. In ", pf, " for module ", m[1], " line: ", line)
+							os.Exit(1)
+						}
 					}
 					if strings.Contains(gitModuleAttributes, ",") {
 						if a := reGitAttribute.FindStringSubmatch(strings.SplitN(gitModuleAttributes, ",", 2)[1]); len(a) > 1 {
@@ -169,7 +180,47 @@ func readPuppetfile(pf string, sshKey string) Puppetfile {
 							} else if a[1] == "ref" {
 								gm.ref = a[2]
 							} else if a[1] == "link" {
-								gm.link = a[2]
+								gm.link, err = strconv.ParseBool(a[2])
+								if err != nil {
+									log.Fatal("Error: Can not convert value ", a[2], " of parameter ", a[1], " to boolean. In ", pf, " for module ", m[1], " line: ", line)
+									os.Exit(1)
+								}
+							} else if a[1] == "ignore-unreachable" {
+								gm.ignoreUnreachable, err = strconv.ParseBool(a[2])
+								if err != nil {
+									log.Fatal("Error: Can not convert value ", a[2], " of parameter ", a[1], " to boolean. In ", pf, " for module ", m[1], " line: ", line)
+									os.Exit(1)
+								}
+							}
+							//puppetFile.gitModules[m[1]] = GitModule{a[1]: a[2]}
+							//fmt.Println("found for git mod ", m[1], " attribute ", a[1], " with value ", a[2])
+						}
+
+					}
+					if strings.Contains(gitModuleAttributes, ",") {
+						if a := reGitAttribute.FindStringSubmatch(strings.SplitN(gitModuleAttributes, ",", 3)[2]); len(a) > 1 {
+							if a[1] == "git" {
+								gm.git = a[2]
+							} else if a[1] == "branch" {
+								gm.branch = a[2]
+							} else if a[1] == "tag" {
+								gm.tag = a[2]
+							} else if a[1] == "commit" {
+								gm.commit = a[2]
+							} else if a[1] == "ref" {
+								gm.ref = a[2]
+							} else if a[1] == "link" {
+								gm.link, err = strconv.ParseBool(a[2])
+								if err != nil {
+									log.Fatal("Error: Can not convert value ", a[2], " of parameter ", a[1], " to boolean. In ", pf, " for module ", m[1], " line: ", line)
+									os.Exit(1)
+								}
+							} else if a[1] == "ignore-unreachable" {
+								gm.ignoreUnreachable, err = strconv.ParseBool(a[2])
+								if err != nil {
+									log.Fatal("Error: Can not convert value ", a[2], " of parameter ", a[1], " to boolean. In ", pf, " for module ", m[1], " line: ", line)
+									os.Exit(1)
+								}
 							}
 							//puppetFile.gitModules[m[1]] = GitModule{a[1]: a[2]}
 							//fmt.Println("found for git mod ", m[1], " attribute ", a[1], " with value ", a[2])
