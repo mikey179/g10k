@@ -45,7 +45,7 @@ func resolvePuppetEnvironment(envBranch string) {
 				branches := strings.Split(strings.TrimSpace(er.output), "\n")
 
 				for _, branch := range branches {
-					if len(envBranch) > 0 && branch != envBranch {
+					if strings.HasPrefix(branch, "tmp/") && strings.HasSuffix(branch, "/head") || (len(envBranch) > 0 && branch != envBranch) {
 						Debugf("Skipping branch " + branch)
 						continue
 					}
