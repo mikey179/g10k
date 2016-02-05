@@ -141,9 +141,11 @@ func readPuppetfile(pf string, sshKey string) Puppetfile {
 				}
 				puppetFile.gitModules[m[1]] = GitModule{}
 				//fmt.Println("found git mod attribute ---> ", gitModuleAttributes)
-				if a := reGitAttribute.FindStringSubmatch(gitModuleAttributes); len(a) > 1 {
-					gm := GitModule{}
-					//fmt.Println("found for git mod ", m[1], " attribute ", a[1], " with value ", a[2])
+				gm := GitModule{}
+				for i := 0; i <= strings.Count(gitModuleAttributes, ","); i++ {
+					//fmt.Println("i -->", i)
+					a := reGitAttribute.FindStringSubmatch(strings.Split(gitModuleAttributes, ",")[i])
+					//fmt.Println("a -->", a)
 					if a[1] == "git" {
 						gm.git = a[2]
 					} else if a[1] == "branch" {
@@ -167,68 +169,9 @@ func readPuppetfile(pf string, sshKey string) Puppetfile {
 							os.Exit(1)
 						}
 					}
-					if strings.Contains(gitModuleAttributes, ",") {
-						if a := reGitAttribute.FindStringSubmatch(strings.SplitN(gitModuleAttributes, ",", 2)[1]); len(a) > 1 {
-							if a[1] == "git" {
-								gm.git = a[2]
-							} else if a[1] == "branch" {
-								gm.branch = a[2]
-							} else if a[1] == "tag" {
-								gm.tag = a[2]
-							} else if a[1] == "commit" {
-								gm.commit = a[2]
-							} else if a[1] == "ref" {
-								gm.ref = a[2]
-							} else if a[1] == "link" {
-								gm.link, err = strconv.ParseBool(a[2])
-								if err != nil {
-									log.Fatal("Error: Can not convert value ", a[2], " of parameter ", a[1], " to boolean. In ", pf, " for module ", m[1], " line: ", line)
-									os.Exit(1)
-								}
-							} else if a[1] == "ignore-unreachable" {
-								gm.ignoreUnreachable, err = strconv.ParseBool(a[2])
-								if err != nil {
-									log.Fatal("Error: Can not convert value ", a[2], " of parameter ", a[1], " to boolean. In ", pf, " for module ", m[1], " line: ", line)
-									os.Exit(1)
-								}
-							}
-							//puppetFile.gitModules[m[1]] = GitModule{a[1]: a[2]}
-							//fmt.Println("found for git mod ", m[1], " attribute ", a[1], " with value ", a[2])
-						}
 
-					}
-					if strings.Contains(gitModuleAttributes, ",") {
-						if a := reGitAttribute.FindStringSubmatch(strings.SplitN(gitModuleAttributes, ",", 3)[2]); len(a) > 1 {
-							if a[1] == "git" {
-								gm.git = a[2]
-							} else if a[1] == "branch" {
-								gm.branch = a[2]
-							} else if a[1] == "tag" {
-								gm.tag = a[2]
-							} else if a[1] == "commit" {
-								gm.commit = a[2]
-							} else if a[1] == "ref" {
-								gm.ref = a[2]
-							} else if a[1] == "link" {
-								gm.link, err = strconv.ParseBool(a[2])
-								if err != nil {
-									log.Fatal("Error: Can not convert value ", a[2], " of parameter ", a[1], " to boolean. In ", pf, " for module ", m[1], " line: ", line)
-									os.Exit(1)
-								}
-							} else if a[1] == "ignore-unreachable" {
-								gm.ignoreUnreachable, err = strconv.ParseBool(a[2])
-								if err != nil {
-									log.Fatal("Error: Can not convert value ", a[2], " of parameter ", a[1], " to boolean. In ", pf, " for module ", m[1], " line: ", line)
-									os.Exit(1)
-								}
-							}
-							//puppetFile.gitModules[m[1]] = GitModule{a[1]: a[2]}
-							//fmt.Println("found for git mod ", m[1], " attribute ", a[1], " with value ", a[2])
-						}
-
-					}
-					puppetFile.gitModules[m[1]] = gm
 				}
+				puppetFile.gitModules[m[1]] = gm
 			}
 		}
 
